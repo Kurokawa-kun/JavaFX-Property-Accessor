@@ -6,6 +6,31 @@ JavaFXプロパティのアクセサメソッドを自動作成できるアノ�
 - **processor**：アノテーションプロセッサの入ったサブプロジェクト
 - **example**：サンプルプログラムの入ったサブプロジェクト
 
+
+## プロパティについて
+JavaFXのプロパティを作成するには以下3つのアクセサメソッドを用意する必要があります。本アノテーションプロセッサを使うことでこれらのコードを自動生成することが可能です。
+```
+    //  JavaFXプロパティ
+    private StringProperty text = new SimpleStringProperty();
+
+    （中略）
+    
+    //  getterメソッド
+    public String getText()
+    {
+        return this.text.get();
+    }
+    //  setterメソッド
+    public void setText(String text)
+    {
+        this.text.set(text);
+    }    
+    //  プロパティメソッド
+    public StringProperty textProperty()
+    {
+        return this.text;
+    }
+```
 # 使用方法
 ## 設定
 ご自分のプロジェクトにサブプロジェクトprocessorを追加し、build.gradleに以下の記述を追加します。
@@ -65,4 +90,4 @@ public class App1
 ```
 
 ## 制限事項
-上述の通り、@FxSetterと@FxPropertyはまだ使えません。
+上述の通り、@FxSetterと@FxPropertyは現在開発中です。
