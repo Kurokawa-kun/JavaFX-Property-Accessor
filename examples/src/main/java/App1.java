@@ -1,27 +1,24 @@
-import io.github.kurokawa_kun.annotation.*;
+import io.github.kurokawa_kun.annotation.javafx.*;
+import io.github.kurokawa_kun.annotation.javafx.type.*;
 import javafx.beans.property.*;
 
+//  サンプルプログラム
 public class App1
 {
     @FxGetter
-    private StringProperty name = new SimpleStringProperty("Name property here.");
+    private IntegerProperty age = new SimpleIntegerProperty();    
     
-//    @FxGetter
-//    private IntegerProperty height = new SimpleIntegerProperty(75);
-
-    //  エラー：Propertyインターフェースを継承していないクラス
-    //@FxGetter
-    //private String CompanyName;
+    @FxGetter(valueType = ValueType.OBJECT)
+    private IntegerProperty height = new SimpleIntegerProperty();    
     
-    //  エラー：プリミティブ型のプロパティ
-    //@FxGetter
-    //private int intValue;
-
+    @FxSetter(access = Access.PROTECTED)
+    private StringProperty name = new SimpleStringProperty();
+    
+    @FxGetter
+    private double temperature; //  エラー
     
     public App1()
     {
-        System.out.println("App1 constructor called.");
-        System.out.println(this.getName()); //  ソースコードにないメソッドの呼び出し
     }
     
     public static void main(String[] args)

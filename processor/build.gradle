@@ -1,6 +1,7 @@
 plugins
 {
     id 'java-library'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 repositories
@@ -12,6 +13,10 @@ dependencies
 {
     testImplementation libs.junit.jupiter
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    annotationProcessor 'org.projectlombok:lombok:1.18.48'
+    compileOnly 'org.projectlombok:lombok:1.18.48'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.48'
+    testCompileOnly 'org.projectlombok:lombok:1.18.48'
 }
 
 java
@@ -38,6 +43,12 @@ jar
     {
         attributes('Automatic-Module-Name': 'JavaFxPropertyAnnotationProcessor')
     }
+}
+
+javafx
+{
+    version = "25"
+    modules = ['javafx.controls']
 }
 
 tasks.withType(JavaCompile)

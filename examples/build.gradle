@@ -66,5 +66,5 @@ tasks.withType(JavaCompile)
     options.forkOptions.jvmArgs += '--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED'
     
     //  詳細メッセージを表示するオプション
-    //options.compilerArgs += '-Averbose=true'
+    options.compilerArgs += '-Averbose=true'
 }
