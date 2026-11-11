@@ -11,5 +11,5 @@ public @interface FxSetter
     String suffix() default "";
     String parameterName() default "value";
     ValueType valueType() default ValueType.DEFAULT;
-    Access access() default Access.PUBLIC;
+    Access access() default Access.DEFAULT;
 }

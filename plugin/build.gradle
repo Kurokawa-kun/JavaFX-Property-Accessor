@@ -1,0 +1,64 @@
+plugins
+{
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+repositories
+{
+    mavenLocal()
+    mavenCentral()
+}
+
+java
+{
+    toolchain
+    {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies
+{
+    implementation 'io.github.kurokawa_kun:javafx-property-accessor:0.9.0'
+}
+
+group = 'io.github.kurokawa_kun'
+version = '0.9.0'
+
+//  自分自身の定義
+publishing
+{
+    publications
+    {
+        pluginMaven(MavenPublication)
+        {
+            artifactId = 'javafx-property-accessor-plugin'
+        }
+    }
+}
+
+//  参照するプラグインの定義
+gradlePlugin
+{
+    plugins
+    {
+        JavaFxAccessorPlugin
+        {
+            id = 'io.github.kurokawa_kun.javafx-property-accessor-plugin'
+            implementationClass = 'io.github.kurokawa_kun.annotation.javafx.JavaFxPropertyAccessorPlugin'
+        }
+    }
+}
+
+tasks.named('compileJava')
+{
+    //  自身のコンパイルが始まる前にprocessorのビルドと公開を先に完了させる
+    dependsOn(':processor:publishToMavenLocal')
+}
+
+tasks.named('build')
+{
+    //  自身のビルドが成功した後に自身も公開する
+    finalizedBy('publishToMavenLocal')
+}

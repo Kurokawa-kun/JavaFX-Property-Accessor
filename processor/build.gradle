@@ -1,7 +1,7 @@
 plugins
 {
     id 'java-library'
-    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'maven-publish'
 }
 
 repositories
@@ -9,46 +9,50 @@ repositories
     mavenCentral()
 }
 
+java
+{
+    toolchain
+    {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 dependencies
 {
-    testImplementation libs.junit.jupiter
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     annotationProcessor 'org.projectlombok:lombok:1.18.48'
     compileOnly 'org.projectlombok:lombok:1.18.48'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.48'
     testCompileOnly 'org.projectlombok:lombok:1.18.48'
 }
 
-java
+group = 'io.github.kurokawa_kun'
+version = '0.9.0'
+
+//  自分自身の定義
+publishing
 {
-    toolchain
+    publications
     {
-        languageVersion = JavaLanguageVersion.of(25)
+        mavenJava(MavenPublication)
+        {
+            artifactId = 'javafx-property-accessor'
+            from components.java
+        }
     }
-}
-
-tasks.named('test')
-{
-    useJUnitPlatform()
-}
-
-tasks.named('jar')
-{
-    archiveFileName = 'JavaFxPropertyAnnotationProcessor.jar'
 }
 
 jar
 {
     manifest
     {
-        attributes('Automatic-Module-Name': 'JavaFxPropertyAnnotationProcessor')
+        attributes('Automatic-Module-Name': 'JavaFxPropertyAccessor')
     }
 }
 
-javafx
+tasks.named('build')
 {
-    version = "25"
-    modules = ['javafx.controls']
+    //  自身のビルドが成功した後に自身も公開する
+    finalizedBy('publishToMavenLocal')
 }
 
 tasks.withType(JavaCompile)

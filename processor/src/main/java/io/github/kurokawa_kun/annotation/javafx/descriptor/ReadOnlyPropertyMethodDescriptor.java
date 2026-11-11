@@ -7,6 +7,6 @@ public class ReadOnlyPropertyMethodDescriptor extends MethodDescriptor
         super();
         this.setFormat(Format.makePropertyInstance());
         this.logic = Logic.makeReturnReadOnlyPropertyLogic();
-        this.logic.setElementType(readOnlyProperty);        
+        this.logic.setBaseClassName(readOnlyProperty);        
     }
 }

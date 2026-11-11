@@ -10,13 +10,16 @@ public class Logic implements DebugInfo
 {
     @Getter
     private final String tag;   //  デバッグ用の識別子
+    @Getter @Setter
     private String annotation;  //  このクラスが処理しようとしているアノテーション
     @Getter
     private ReturnType returnType;  //  値返却の有無。返却する場合、プリミティブ型かオブジェクト型か
     @Getter
     private ParameterType parameterType = null; //  パラメータの型がプリミティブ型かオブジェクト型か
-    @Getter
-    private String elementType = null;  //  このプロパティそのものの型
+    @Getter @Setter
+    private String baseClassName = null;  //  このプロパティそのものの型
+    @Getter @Setter
+    private String genericTypeNames = null;  //  このプロパティが持つ型情報
     @Getter @Setter
     private String propertyType = null;  //  このプロパティが持つ値の型
     
@@ -27,16 +30,6 @@ public class Logic implements DebugInfo
     private MemberType memberType = null;  //  インスタンスメンバーかクラスメンバーか。staticが指定されていたときに変更が必要    
     @Getter @Setter
     private String targetMethodName;     //  作成したメソッドの中で呼び出すメソッド。メソッドを呼び出す代わりにフィールドを参照する場合はnullにすること
-    
-    public void setElementType(String elementType)            
-    {
-        this.elementType = elementType;
-    }
-    
-    public void setAnnotation(String annotation)
-    {
-        this.annotation = annotation;
-    }
     
     //  外部から呼び出しできないコンストラクタ
     private Logic(String tag, ReturnType returnType, ParameterType parameterType)
@@ -56,6 +49,10 @@ public class Logic implements DebugInfo
     {
         return new Logic("Logic:VoidObjectLogic", ReturnType.VOID, ParameterType.OBJECT_PARAMETER);
     }    
+    public static Logic makeVoidGenericObjectLogic()
+    {
+        return new Logic("Logic:VoidGenericObjectLogic", ReturnType.VOID, ParameterType.GENERIC_OBJECT_PARAMETER);
+    }    
     public static Logic makeReturnFieldLogic()
     {
         return new Logic("Logic:ReturnFieldLogic", ReturnType.RETURN_FIELD, ParameterType.NO_PARAMETER);
@@ -72,6 +69,10 @@ public class Logic implements DebugInfo
     {
         return new Logic("Logic:ReturnPropertyLogic", ReturnType.RETURN_PROPERTY, ParameterType.NO_PARAMETER);
     }
+    public static Logic makeReturnGenericPropertyLogic()
+    {
+        return new Logic("Logic:ReturnGenericPropertyLogic", ReturnType.RETURN_GENERIC_PROPERTY, ParameterType.NO_PARAMETER);
+    }
     public static Logic makeReturnReadOnlyPropertyLogic()
     {
         return new Logic("Logic:ReturnReadOnlyPropertyLogic", ReturnType.RETURN_READONLY_PROPERTY, ParameterType.NO_PARAMETER);
@@ -79,7 +80,12 @@ public class Logic implements DebugInfo
     public static Logic makeReturnReadOnlyWrapperLogic()
     {
         return new Logic("Logic:ReturnReadOnlyWrapperLogic", ReturnType.RETURN_READONLY_WRAPPER, ParameterType.NO_PARAMETER);
+    }    
+    public static Logic makeReturnGenericObjectLogic()
+    {
+        return new Logic("Logic:ReturnGenericObjectLogic", ReturnType.RETURN_GENERIC_OBJECT_VALUE, ParameterType.NO_PARAMETER);
     }
+    
     
     public String getDebugInfo()
     {
@@ -89,7 +95,8 @@ public class Logic implements DebugInfo
         stringBuilder.append(String.format("tag                 :%s\n", this.tag));
         stringBuilder.append(String.format("returnType          :%s\n", this.returnType));
         stringBuilder.append(String.format("parameterType       :%s\n", this.parameterType));
-        stringBuilder.append(String.format("elementType         :%s\n", this.elementType));
+        stringBuilder.append(String.format("baseClassName       :%s\n", this.baseClassName));
+        stringBuilder.append(String.format("genericTypeNames    :%s\n", this.genericTypeNames));
         stringBuilder.append(String.format("propertyType        :%s\n", this.propertyType));
         stringBuilder.append(String.format("access              :%s\n", this.access));
         stringBuilder.append(String.format("memberType          :%s\n", this.memberType));

@@ -1,8 +1,17 @@
+pluginManagement
+{
+    repositories 
+    {
+        mavenLocal() //  ローカルMavenリポジトリからプラグインを探す
+        gradlePluginPortal() // 公式ポータル
+    }
+}
+
 plugins
 {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
-rootProject.name = 'JavaFX Property Annotation Processor'
-include('processor')
-include('examples')
+rootProject.name = 'JavaFX-Property-Accessor'
+include(':processor')
+include(':plugin')

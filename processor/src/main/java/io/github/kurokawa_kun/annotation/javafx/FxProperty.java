@@ -9,5 +9,5 @@ public @interface FxProperty
     String prefix() default "";
     String suffix() default "Property";
     boolean readOnly() default false;
-    Access access() default Access.PUBLIC;
+    Access access() default Access.DEFAULT;
 }

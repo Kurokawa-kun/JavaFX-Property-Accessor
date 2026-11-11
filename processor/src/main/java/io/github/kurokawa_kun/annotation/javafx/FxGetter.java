@@ -10,5 +10,5 @@ public @interface FxGetter
     String prefix() default "";
     String suffix() default "";
     ValueType valueType() default ValueType.DEFAULT;
-    Access access() default Access.PUBLIC;
+    Access access() default Access.DEFAULT;
 }

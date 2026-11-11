@@ -1,22 +1,10 @@
 package io.github.kurokawa_kun.annotation.javafx;
-import io.github.kurokawa_kun.annotation.javafx.type.ValueType;
-import io.github.kurokawa_kun.annotation.javafx.type.MemberType;
-import io.github.kurokawa_kun.annotation.javafx.type.Access;
-import io.github.kurokawa_kun.annotation.javafx.type.PropertyType;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.ReadOnlyWrapperMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.ObjectSetterMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.ObjectBooleanGetterMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.ReadOnlyPropertyMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.PrimitiveSetterMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.PrimitiveGetterMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.PrimitiveBooleanGetterMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.MethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.ObjectGetterMethodDescriptor;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.PropertyMethodDescriptor;
+import io.github.kurokawa_kun.annotation.javafx.type.*;
+import io.github.kurokawa_kun.annotation.javafx.descriptor.*;
 import java.util.Arrays;
 import java.util.stream.Stream;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.util.*;
+import javax.lang.model.element.Modifier;
 import lombok.*;
 
 public class MethodDescriptorFactory
@@ -33,32 +21,34 @@ public class MethodDescriptorFactory
         ・アクセス権が○○に指定されているか
     */
     @Getter
-    String annotation = null;
+    private String annotation = null;
     @Getter
-    String elementType = null;
+    private String baseClassName = null;
+    @Getter
+    private String genericTypeNames = null;
     @Getter
     Modifier[] modifiers = null;
     //  仕様上無理があるのでsourcedValueTypeは使わない（Object型だけ作れるパターンに対応できない）
     //@Getter
     //ValueType sourcedValueType = null;    //  ソースコード上の型情報    
     @Getter
-    boolean canMakePrimitive = false;
+    private boolean canMakePrimitive = false;
     @Getter
-    boolean canMakeObject = false;
+    private boolean canMakeObject = false;
     @Getter
-    boolean canMakeReadOnlyProperty = false;
+    private boolean canMakeReadOnlyProperty = false;
     @Getter
-    boolean canMakeProperty = false;
+    private boolean canMakeProperty = false;
     @Getter
-    ValueType annotatedValueType = null;    //  指定された型情報。この通りに作られる保証はない    
+    private ValueType annotatedValueType = null;    //  指定された型情報。この通りに作られる保証はない    
     @Getter
-    ValueType definitiveValueType = null;
+    private ValueType definitiveValueType = null;
     @Getter
     private boolean sourcedReadOnly;
     @Getter
     private boolean annotatedReadOnly;
     @Getter
-    private boolean definitiveReadOnly;    
+    private boolean definitiveReadOnly;
     @Getter
     private Access sourcedAccessPrivilege = Access.PUBLIC;  //  これは「ソース中に書かれたプロパティの」アクセス権（分かりにくい…そのうち直したい）
     @Getter
@@ -69,10 +59,10 @@ public class MethodDescriptorFactory
     private MemberType definitiveMemberType = null;  //  static有無の指定はソースで書かれていることを変更しようがないのでチェック等は行わない    
     @Getter
     private PropertyType propertyType = null;   //  プロパティの種類
-    @Getter
-    private String baseClassName = null;  //  指定されたプロパティの最も基底となるインターフェース（ReadOnlyPropertyインターフェース）
+//    @Getter
+//    private String baseClassName = null;  //  指定されたプロパティの最も基底となるインターフェース（ReadOnlyPropertyインターフェース）
     @Getter @Setter
-    String parameterType = null;    //  プロパティがやり取りする型の情報
+    private String parameterType = null;    //  プロパティがやり取りする型の情報
     
     //  環境情報
     private Elements elementUtils = null;
@@ -85,7 +75,8 @@ public class MethodDescriptorFactory
         this.elementUtils = elementUtils;
         this.typeUtils = typeUtils;
         this.annotation = annotation;
-        this.elementType = elementType;
+        this.baseClassName = Utils.getBaseClassName(elementType);
+        this.genericTypeNames = Utils.getGenericTypeNames(elementType);
     }
     
     //  プロパティの種類を設定する
@@ -99,38 +90,40 @@ public class MethodDescriptorFactory
         this.annotatedValueType = annotatedValueType;
         
         //  どのタイプのプロパティなのかを判定する
-        //  クラス階層を下から上に辿る必要があるためelse if文で判定しないこと
-        int index = -9999;
-        if (Utils.anyDelivered(this.elementUtils, this.typeUtils, this.elementType, Utils.readOnlyProperties))
+        //  クラス階層を上から下へ順番に辿る必要があるためelse if文で判定しないこと
+        int index = -9999;        
+        if (Utils.anyDelivered(this.elementUtils, this.typeUtils, this.baseClassName, Utils.READ_ONLY_PROPERTIES))
         {
-            index = Arrays.asList(Utils.readOnlyProperties).indexOf(this.elementType);
-            if (index > 0)
+            index = Arrays.asList(Utils.READ_ONLY_PROPERTIES).indexOf(this.baseClassName);
+            if (index >= 0)
             {
-                this.baseClassName = this.elementType;  //  このクラス自体がReadOnlyPropertyなので変換は不要
+                this.baseClassName = this.baseClassName;  //  このクラス自体がReadOnlyPropertyなので変換は不要
                 this.propertyType = propertyType.READ_ONLY_PROPERTY;
             }
         }
-        if (Utils.anyDelivered(this.elementUtils, this.typeUtils, this.elementType, Utils.properties))
+        if (Utils.anyDelivered(this.elementUtils, this.typeUtils, this.baseClassName, Utils.PROPERTIES))
         {
-            index = Arrays.asList(Utils.properties).indexOf(this.elementType);
-            if (index > 0)
+            index = Arrays.asList(Utils.PROPERTIES).indexOf(this.baseClassName);
+            if (index >= 0)
             {
-                this.baseClassName = Utils.readOnlyProperties[index];
+                this.baseClassName = Utils.PROPERTIES[index];
                 this.propertyType = propertyType.PROPERTY;
             }
         }
-        if (Utils.anyDelivered(this.elementUtils, this.typeUtils, this.elementType, Utils.readOnlyWrappers))
+        if (Utils.anyDelivered(this.elementUtils, this.typeUtils, this.baseClassName, Utils.READ_ONLY_WRAPPERS))
         {
-            index = Arrays.asList(Utils.readOnlyWrappers).indexOf(this.elementType);
-            if (index > 0)
+            index = Arrays.asList(Utils.READ_ONLY_WRAPPERS).indexOf(this.baseClassName);
+            if (index >= 0)
             {
-                this.baseClassName = Utils.readOnlyProperties[index];
+                this.baseClassName = Utils.READ_ONLY_PROPERTIES[index];
                 this.propertyType = propertyType.READ_ONLY_WRAPPER;
             }
         }
-        
         //  どのプロパティの型にもマッチしなかった場合
-        if (this.propertyType == null) return false;
+        if (this.propertyType == null)
+        {
+            return false;
+        }
         
         //  指定された型から作成可能なメソッドを判定する
         switch (annotation)
@@ -139,24 +132,24 @@ public class MethodDescriptorFactory
             case Utils.FX_SETTER:
             {
                 this.definitiveReadOnly = false;  //  このフラグは使わない
-                this.canMakePrimitive = (Utils.primitiveValues.get(this.baseClassName) != null);
+                this.canMakePrimitive = (Utils.PRIMITIVE_VALUES.get(this.baseClassName) != null);
                 this.canMakeObject = true;  //  このルートに来ている（クラスのチェックは終わっている）時点で常にtrue
                 
                 if (this.canMakePrimitive && this.canMakeObject)
                 {
                     switch (this.annotatedValueType)
                     {
-                        case ValueType.OBJECT:
+                        case OBJECT:
                         {
                             this.definitiveValueType = ValueType.OBJECT;
-                            this.parameterType = Utils.valueTypes.get(this.baseClassName);
+                            this.parameterType = Utils.VALUE_TYPES.get(this.baseClassName);
                             this.definitiveReadOnly = false;
                             break;
                         }
                         default:
                         {
                             this.definitiveValueType = ValueType.PRIMITIVE;
-                            this.parameterType = Utils.primitiveValues.get(this.baseClassName);
+                            this.parameterType = Utils.PRIMITIVE_VALUES.get(this.baseClassName);
                             this.definitiveReadOnly = false;
                             break;
                         }
@@ -166,11 +159,11 @@ public class MethodDescriptorFactory
                 {
                     switch (this.annotatedValueType)
                     {
-                        case ValueType.PRIMITIVE:
-                        case ValueType.DEFAULT:
+                        case PRIMITIVE:
+                        case DEFAULT:
                         {
                             this.definitiveValueType = ValueType.PRIMITIVE;
-                            this.parameterType = Utils.primitiveValues.get(this.baseClassName);
+                            this.parameterType = Utils.PRIMITIVE_VALUES.get(this.baseClassName);
                             this.definitiveReadOnly = false;
                             break;
                         }
@@ -187,11 +180,11 @@ public class MethodDescriptorFactory
                 {
                     switch (this.annotatedValueType)
                     {
-                        case ValueType.OBJECT:
-                        case ValueType.DEFAULT:
+                        case OBJECT:
+                        case DEFAULT:
                         {
                             this.definitiveValueType = ValueType.OBJECT;
-                            this.parameterType = Utils.valueTypes.get(this.baseClassName);
+                            this.parameterType = Utils.VALUE_TYPES.get(this.baseClassName);
                             this.definitiveReadOnly = false;
                             break;
                         }
@@ -236,28 +229,28 @@ public class MethodDescriptorFactory
                 {
                     //  ReadOnlyPropertyを返却するメソッドを作成する
                     this.definitiveValueType = ValueType.OBJECT;
-                    this.parameterType = Utils.readOnlyProperty;
+                    this.parameterType = Utils.READ_ONLY_PROPERTY;
                     this.definitiveReadOnly = true;
                 }                
                 else if (this.canMakeReadOnlyProperty && this.canMakeProperty && !extWrapper && this.annotatedReadOnly)
                 {
                     //  ReadOnlyPropertyを返却するメソッドを作成する
                     this.definitiveValueType = ValueType.OBJECT;
-                    this.parameterType = Utils.readOnlyProperty;
+                    this.parameterType = Utils.READ_ONLY_PROPERTIES[Arrays.asList(Utils.PROPERTIES).indexOf(this.baseClassName)];
                     this.definitiveReadOnly = true;
                 }
                 else if (this.canMakeReadOnlyProperty && this.canMakeProperty && !extWrapper && !this.annotatedReadOnly)
                 {
                     //  Propertyを返却するメソッドを作成する
                     this.definitiveValueType = ValueType.OBJECT;
-                    this.parameterType = this.elementType;
+                    this.parameterType = Utils.PROPERTIES[Arrays.asList(Utils.PROPERTIES).indexOf(this.baseClassName)];
                     this.definitiveReadOnly = false;
                 }
                 else if (extWrapper)
                 {
                     //  ReadOnlyPropertyを返却するメソッドを作成する
                     this.definitiveValueType = ValueType.OBJECT;
-                    this.parameterType = Utils.readOnlyProperty;
+                    this.parameterType = Utils.READ_ONLY_PROPERTY;
                     this.definitiveReadOnly = true;
                 }
                 else
@@ -266,7 +259,6 @@ public class MethodDescriptorFactory
                 }
             }
         }
-        
         return true;
     }
     
@@ -277,6 +269,13 @@ public class MethodDescriptorFactory
     public boolean checkAccessPrivilege()
     {
         return (this.sourcedAccessPrivilege.getAccessLevel() < annotatedAccessPrivilege.getAccessLevel());
+    }
+    
+    //  ReadOnlyWrapperにpublicなsetterをつけようとしていないかチェック
+    public boolean checkSetterOfReadOnlyWrapper()
+    {
+        return !(this.propertyType == PropertyType.READ_ONLY_WRAPPER && 
+            this.annotatedAccessPrivilege == Access.PUBLIC);
     }
     
     //  ReadOnlyプロパティにsetメソッドを呼び出していないかチェックする
@@ -327,7 +326,6 @@ public class MethodDescriptorFactory
     public MethodDescriptor makeMethodDescriptor()
     {
         MethodDescriptor methodDescriptor = null;
-        
         //  テンプレートからMethodDescriptorを作成する
         switch (this.getAnnotation())
         {
@@ -336,27 +334,34 @@ public class MethodDescriptorFactory
                 //  Getterパターン
                 if (this.definitiveValueType == ValueType.PRIMITIVE)
                 {
-                    if (Arrays.asList(Utils.booleanValues).stream().anyMatch(booleanValue -> booleanValue.equals(this.parameterType)))
+                    //  プリミティブ型のメソッドを作成することが決まった場合
+                    if (Arrays.asList(Utils.BOOLEAN_VALUES).stream().anyMatch(booleanValue -> booleanValue.equals(this.parameterType)))
                     {
                         //  boolean型の場合
                         methodDescriptor = new PrimitiveBooleanGetterMethodDescriptor("get");
                     }
                     else
                     {
-                        //  それ以外の型の場合
+                        //  プリミティブ型の場合
                         methodDescriptor = new PrimitiveGetterMethodDescriptor("get");
                     }
                 }
                 else
                 {
-                    if (Arrays.asList(Utils.booleanValues).stream().anyMatch(booleanValue -> booleanValue.equals(this.parameterType)))
+                    //  オブジェクト型のメソッドを作成することが決まった場合
+                    if (Arrays.asList(Utils.BOOLEAN_VALUES).stream().anyMatch(booleanValue -> booleanValue.equals(this.parameterType)))
                     {
                         //  Boolean型の場合
                         methodDescriptor = new ObjectBooleanGetterMethodDescriptor("getValue");
                     }
+                    else if (!this.genericTypeNames.isEmpty())
+                    {
+                        //  ジェネリクスを含む型の場合
+                        methodDescriptor = new GenericObjectGetterMethodDescriptor("getValue", this.genericTypeNames);
+                    }
                     else
                     {
-                        //  それ以外の型の場合
+                        //  オブジェクト型の場合
                         methodDescriptor = new ObjectGetterMethodDescriptor("getValue");
                     }
                 }
@@ -367,10 +372,17 @@ public class MethodDescriptorFactory
                 //  Setterパターン
                 if (this.definitiveValueType == ValueType.PRIMITIVE)
                 {
+                    //  プリミティブ型の場合
                     methodDescriptor = new PrimitiveSetterMethodDescriptor("set");
+                }
+                else if (!this.genericTypeNames.isEmpty())
+                {
+                    //  ジェネリクスを含む型の場合
+                    methodDescriptor = new GenericObjectSetterMethodDescriptor("setValue", this.genericTypeNames);
                 }
                 else
                 {
+                    //  オブジェクト型の場合
                     methodDescriptor = new ObjectSetterMethodDescriptor("setValue");
                 }
                 break;
@@ -380,10 +392,18 @@ public class MethodDescriptorFactory
                 //  PRIMITIVE/OBJECT型の判定は不要。プロパティは常にOBJECT型だから
                 if (this.definitiveReadOnly)
                 {
-                    if (this.propertyType == PropertyType.READ_ONLY_PROPERTY)
+                    if (this.propertyType == PropertyType.READ_ONLY_PROPERTY || this.propertyType == PropertyType.PROPERTY)
                     {
-                        //  ReadOnlyPropertyパターン
-                        methodDescriptor = new ReadOnlyPropertyMethodDescriptor(this.baseClassName);
+                        if (!this.genericTypeNames.isEmpty())
+                        {
+                            //  ジェネリクスを含む型の場合
+                            methodDescriptor = new GenericObjectReadOnlyPropertyMethodDescriptor(this.genericTypeNames);
+                        }
+                        else
+                        {
+                            //  ReadOnlyPropertyパターン
+                            methodDescriptor = new ReadOnlyPropertyMethodDescriptor(this.baseClassName);                            
+                        }
                     }
                     else
                     {
@@ -393,8 +413,16 @@ public class MethodDescriptorFactory
                 }
                 else
                 {
-                    //  Propertyパターン
-                    methodDescriptor = new PropertyMethodDescriptor();
+                    if (!this.genericTypeNames.isEmpty())
+                    {
+                        //  ジェネリクスを含む型の場合
+                        methodDescriptor = new GenericObjectPropertyMethodDescriptor(this.genericTypeNames);
+                    }
+                    else
+                    {
+                        //  Propertyパターン
+                        methodDescriptor = new PropertyMethodDescriptor();
+                    }
                 }
                 break;
             }
@@ -411,7 +439,12 @@ public class MethodDescriptorFactory
         methodDescriptor.getFormat().setMemberType(this.definitiveMemberType);  //  static指定の有無（メソッドの定義）
         methodDescriptor.getFormat().setAccess(this.definitiveAccessPrivilege);  //  メソッドのアクセス権
         methodDescriptor.getLogic().setMemberType(this.definitiveMemberType);  //  static指定の有無（メソッドの内側）
-        methodDescriptor.getLogic().setElementType(this.elementType);  //  プロパティの型情報
+        methodDescriptor.getLogic().setBaseClassName(this.baseClassName);  //  プロパティの型情報        
+        if (!this.genericTypeNames.isEmpty())
+        {
+            //  型情報がある場合は設定する
+            methodDescriptor.getLogic().setGenericTypeNames(this.genericTypeNames);
+        }        
         methodDescriptor.getLogic().setPropertyType(this.parameterType);  //  プロパティの値の型情報
 
         return methodDescriptor;

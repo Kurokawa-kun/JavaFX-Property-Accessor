@@ -1,10 +1,7 @@
 package io.github.kurokawa_kun.annotation.javafx.descriptor;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.util.List;
-import io.github.kurokawa_kun.annotation.javafx.MethodFactory;
 import io.github.kurokawa_kun.annotation.javafx.type.Access;
 import io.github.kurokawa_kun.annotation.javafx.type.MemberType;
-import javax.lang.model.element.Modifier;
 import lombok.*;
 
 //  Formatクラスはメソッドを作成する際に必要となる、メソッド名やメソッド名につく接頭語など「外側」の情報を格納するクラス
@@ -37,6 +34,7 @@ public class Format implements DebugInfo
     public void setMemberType(MemberType memberType)
     {
         flags |= memberType.getFlag();
+        flags |= Flags.FINAL;    //  作成するメソッドは常にfinalにする必要があるため
     }
     
     public long getFlags()

@@ -1,12 +1,13 @@
 package io.github.kurokawa_kun.annotation.javafx;
 import io.github.kurokawa_kun.annotation.javafx.type.*;
-import io.github.kurokawa_kun.annotation.javafx.descriptor.MethodDescriptor;
+import io.github.kurokawa_kun.annotation.javafx.descriptor.*;
 import java.util.*;
-import javax.lang.model.*;
 import javax.lang.model.util.Elements;
 import javax.lang.model.element.*;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic.Kind;
+import javax.lang.model.SourceVersion;
+import javax.tools.Diagnostic;
+import java.text.MessageFormat;
 import javax.annotation.processing.*;
 import com.sun.source.util.*;
 import com.sun.tools.javac.processing.*;
@@ -14,17 +15,28 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Context;
-import java.text.MessageFormat;
 
-@SupportedSourceVersion(SourceVersion.RELEASE_25)
 @SupportedOptions("verbose")
-@SupportedAnnotationTypes({"io.github.kurokawa_kun.annotation.javafx.FxGetter", "io.github.kurokawa_kun.annotation.javafx.FxSetter", "io.github.kurokawa_kun.annotation.javafx.FxProperty"})
+@SupportedAnnotationTypes({Utils.FX_GETTER, Utils.FX_SETTER, Utils.FX_PROPERTY})
 /**
  *    アノテーションプロセッサの本体
  *    -Averbose=trueを指定すると詳細なメッセージを出力する
  */
 public class AccessorMain extends AbstractProcessor
 {
+    /*
+    概要：このアノテーションプロセッサがやっていること
+    
+    動作中のコンパイラのASTの中身を書き換えて、JavaFXのアクセサメソッドを追加する。
+    
+    ・コンパイラが保持しているASTを取得して、ルートから順に辿りJavaFXプロパティのフィールドを探す。
+    ・このAccessorMainクラスからMethodDescriptorFactorクラスを呼び出す。
+    　同クラスは指定されたオプションからどの雛形（MethodDescriptor）が相応しいか判定する。
+    ・MethodDescriptorの中身を微調整する（作成するメソッド名など）。
+    ・MethodGeneratorにMethodDescriptorを渡す。それを元にメソッドを作成する。
+    ・作成されたメソッドをASTに追加する。以後ASTの末端まで繰り返し。
+    */
+    
     private Trees trees = null;
     private TreeMaker treeMaker = null;
     private Context context = null;
@@ -35,10 +47,50 @@ public class AccessorMain extends AbstractProcessor
     private ResourceBundle messageBundle = null;
     
     /**
+     *   このアノテーションプロセッサがサポートしているソースコードのバージョン
+     *   @return バージョン番号
+     */
+    @Override
+    public SourceVersion getSupportedSourceVersion()
+    {
+        /*
+            バージョンチェックについて補足：
+            
+            Java 17～26の間で警告メッセージなく動作するようにしたいので、
+            動的なバージョンチェック(※)を行っている。
+
+            ※ その実行環境がサポートしている、かつ26を超えない数字をサポートしているものとして返す。
+
+            @SupportedSourceVersionアノテーションに古いバージョン（例えばJava 17）を直に指定すると
+            それ以降のバージョンで警告メッセージが表示されてしまう。一方、新しいバージョン（例えばJava 26）を直に指定すると
+            古いバージョンの形式でビルドができない（その時点でSourceVersion.RELEASE_26が存在しないから）ためこのようにしている。
+            
+            Java 16以前ではもともと動作しない。Java 27以降で動作させた場合、警告メッセージが表示される。これは仕様通り。
+        */
+        SourceVersion latestValidVersion = null;
+        
+        for (int versionNumber = 17; versionNumber <= 26; versionNumber++)
+        {
+            try
+            {
+                latestValidVersion = SourceVersion.valueOf("RELEASE_" + String.valueOf(versionNumber));
+            }
+            catch (IllegalArgumentException e)
+            {
+                // 実行中の（古い）JDKがそのバージョンを知らない場合、直前までの有効なバージョンで確定する
+                break;
+            }
+        }
+        
+        return latestValidVersion;
+    }
+    
+    /**
      *   アノテーションプロセッサの初期化処理
      *   @param processingEnv コンパイラが提供する機能を保持した環境
      */
-    @Override public void init(ProcessingEnvironment processingEnv) 
+    @Override
+    public void init(ProcessingEnvironment processingEnv) 
     {
         super.init(processingEnv);
         
@@ -58,7 +110,7 @@ public class AccessorMain extends AbstractProcessor
         }
         catch (MissingResourceException e)
         {
-            this.messager.printMessage(Kind.ERROR, "Failed to load the message file.");
+            messager.printMessage(Diagnostic.Kind.ERROR, "Failed to load the message file.");
         }
         
         //  javac内部の実行環境の取得
@@ -147,7 +199,7 @@ public class AccessorMain extends AbstractProcessor
                         //  ※ この処理はファクトリを呼び出す前に行う必要がある
                         if (Validators.isPrimitive(elementType))
                         {
-                            this.messager.printMessage(Kind.ERROR, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.error.primitivefield"), fieldName));
+                            messager.printMessage(Diagnostic.Kind.ERROR, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.error.primitivefield"), fieldName));
                             return;
                         }
                         
@@ -159,21 +211,36 @@ public class AccessorMain extends AbstractProcessor
                         
                         //  ファクトリの作成
                         MethodDescriptorFactory methodDescriptorFactory = new MethodDescriptorFactory(this.elementUtils, this.typeUtils, currentAnnotation, elementType);
+                        
                         //  必要なプロパティ情報の設定
                         if (!methodDescriptorFactory.setMethodProperty(element.getModifiers().toArray(Modifier[]::new), valueType, readOnly != null ? (Boolean) readOnly : false))
                         {
-                            this.messager.printMessage(Kind.ERROR, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.error.notproperty"), fieldName));
+                            //  JavaFXのプロパティではない
+                            messager.printMessage(Diagnostic.Kind.ERROR, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.error.notproperty"), fieldName));
                             return;
                         }
                         if (!methodDescriptorFactory.checkSetReadOnlyProperty())
                         {
-                            this.messager.printMessage(Kind.ERROR, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.error.settertoreadonly"), fieldName));
+                            //  ReadOnlyPropertyにsetterをつけようとした
+                            messager.printMessage(Diagnostic.Kind.ERROR, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.error.settertoreadonly"), elementType, fieldName));
                             return;
                         }
                         
                         //  accessアトリビュートの取得
                         Access accessPrivilege = Access.convertFromVariableElement(Utils.getCurrentAnnotationAttribute(this.elementUtils, annotationMirror, "access"));
-                        if (accessPrivilege == Access.DEFAULT) accessPrivilege = Access.PUBLIC; //  アトリビュートが変更されていない場合はデフォルト値を設定                        
+                        //  アトリビュートが変更されていない場合はデフォルト値を設定する
+                        if (accessPrivilege == Access.DEFAULT) 
+                        {
+                            if (methodDescriptorFactory.getPropertyType() == PropertyType.READ_ONLY_WRAPPER &&
+                                methodDescriptorFactory.getAnnotation().equals(Utils.FX_SETTER))
+                            {
+                                accessPrivilege = Access.PROTECTED;
+                            }
+                            else
+                            {
+                                accessPrivilege = Access.PUBLIC;
+                            }
+                        }
                         methodDescriptorFactory.setAccess(accessPrivilege);
                         
                         //  ここでメソッドディスクリプタを作成する
@@ -196,16 +263,33 @@ public class AccessorMain extends AbstractProcessor
                         
                         //  ここから先はメソッドを作ることが確定しているためエラーメッセージではなく警告メッセージを出力する
                         
+                        //  プロパティメソッドを作成する、かつミュータブルな値を持つプロパティ、かつ読み取り専用の指定がされているか
+                        if (methodDescriptorFactory.getPropertyType() == PropertyType.PROPERTY &&
+                            Utils.MUTABLE_PROPERTIES.containsKey(methodDescriptor.getLogic().getBaseClassName()) &&
+                            methodDescriptorFactory.isDefinitiveReadOnly())
+                        {
+                            messager.printMessage(Diagnostic.Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.mutable"), fieldName));
+                        }
+                        
+                        //  ReadOnlyWrapperかつ、setterメソッドを作成する、かつpublicが指定されているか
+                        if (!methodDescriptorFactory.checkSetterOfReadOnlyWrapper() &&
+                            methodDescriptorFactory.getAnnotation().equals(Utils.FX_SETTER) && 
+                            Access.convertFromVariableElement(Utils.getCurrentAnnotationAttribute(this.elementUtils, annotationMirror, "access")) == Access.PUBLIC)
+                        {
+                            messager.printMessage(Diagnostic.Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.publicwrappersetter"), fieldName));
+                        }
+                        
                         //  フィールド名の書式チェック
                         if (!Validators.checkStartsWithLowerCase(fieldName))
                         {
-                            this.messager.printMessage(Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.startlowercase"), fieldName));
+                            messager.printMessage(Diagnostic.Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.startlowercase"), fieldName));
+                            
                         }
                         
                         //  不要な接尾語がついていないかチェック
                         if (!Validators.checkEndsWithoutProperty(fieldName))
                         {
-                            this.messager.printMessage(Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.unnecessarysuffix"), fieldName));
+                            messager.printMessage(Diagnostic.Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.unnecessarysuffix"), fieldName));
                         }
                         
                         //  フィールドがpublicになっていないかチェック
@@ -213,19 +297,19 @@ public class AccessorMain extends AbstractProcessor
                         {
                             if (Validators.isPublic(element))
                             {
-                                this.messager.printMessage(Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.publicfield"), fieldName));
+                                messager.printMessage(Diagnostic.Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.publicfield"), fieldName));
                             }
-                            else                                
+                            else
                             {
-                                this.messager.printMessage(Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.loweraccessmethod"), fieldName));
+                                messager.printMessage(Diagnostic.Kind.WARNING, MessageFormat.format(this.messageBundle.getString("platform.annotation.javafx.warning.loweraccessmethod"), fieldName));
                             }
                         }
-                                                
-                        trace.showMessage("Now generating a new method...");
-                        trace.showMessage(methodDescriptor.getDebugInfo());
+                        
+                        //trace.showMessage("Now generating a new method...");
+                        //trace.showMessage(methodDescriptor.getDebugInfo());
                         
                         //  メソッドを作成する
-                        JCMethodDecl generatedMethod = MethodFactory.generateAccessor(treeMaker, names, classDecl, methodDescriptor);
+                        JCMethodDecl generatedMethod = MethodGenerator.generateAccessor(treeMaker, names, classDecl, methodDescriptor);
                         
                         //  ASTにメソッドを追加する
                         classDecl.defs = classDecl.defs.append(generatedMethod);
@@ -235,7 +319,8 @@ public class AccessorMain extends AbstractProcessor
                 }
                 default:
                 {
-                    //  何もしない
+                    //  それ以外の要素の場合。何もせず次の要素を探索する。
+                    break;
                 }
             }
         });

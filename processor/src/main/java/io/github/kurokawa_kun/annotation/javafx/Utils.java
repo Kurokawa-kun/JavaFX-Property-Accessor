@@ -24,7 +24,7 @@ public class Utils
     public static final String[] ALL_TARGET_ANNOTATIONS = {FX_GETTER, FX_SETTER, FX_PROPERTY};
     
     //  プリミティブ型プロパティ
-    public static final String[] primitiveProperties = 
+    public static final String[] PRIMITIVE_PROPERTIES = 
     {
         "javafx.beans.property.BooleanProperty",
         "javafx.beans.property.DoubleProperty",
@@ -34,17 +34,17 @@ public class Utils
     };
     
     //  読み込み専用プロパティ
-    public static final String readOnlyProperty = "javafx.beans.property.ReadOnlyProperty";
+    public static final String READ_ONLY_PROPERTY = "javafx.beans.property.ReadOnlyProperty";
     
     //  論理値。getter作成時、メソッドの名前を変えるときに必要
-    public static final String[] booleanValues =
+    public static final String[] BOOLEAN_VALUES =
     {
         "boolean",
         "java.lang.Boolean"
     };
     
     //  ReadOnlyPropertyクラス
-    public static final String[] readOnlyProperties = 
+    public static final String[] READ_ONLY_PROPERTIES = 
     {
         "javafx.beans.property.ReadOnlyBooleanProperty", 
         "javafx.beans.property.ReadOnlyDoubleProperty", 
@@ -59,7 +59,7 @@ public class Utils
     };
     
     //  Propertyクラス
-    public static final String[] properties = 
+    public static final String[] PROPERTIES = 
     {
         "javafx.beans.property.BooleanProperty", 
         "javafx.beans.property.DoubleProperty", 
@@ -74,7 +74,7 @@ public class Utils
     };
     
     //  ReadOnlyWrapperクラス
-    public static final String[] readOnlyWrappers = 
+    public static final String[] READ_ONLY_WRAPPERS = 
     {
         "javafx.beans.property.ReadOnlyBooleanWrapper", 
         "javafx.beans.property.ReadOnlyDoubleWrapper", 
@@ -89,59 +89,102 @@ public class Utils
     };
     
     //  getの代わりにisのgetterを持つクラス
-    public String[] UsingIsGetter = 
+    public String[] USING_IS_GETTER = 
     {
         "javafx.beans.property.ReadOnlyBooleanProperty", 
         "javafx.beans.property.BooleanProperty", 
         "javafx.beans.property.ReadOnlyBooleanWrapper"
     };
     
-    public static final Map<Modifier, Long> modifierFlags = new HashMap<>();
-    public static final Map<String, TypeTag> primitiveTags = new HashMap<>();
-    public static final Map<String, String> primitiveValues = new HashMap<>();
-    public static final Map<String, String> valueTypes = new HashMap<>();
+    public static final Map<Modifier, Long> MODIFIER_FLAGS = new HashMap<>();
+    public static final Map<String, TypeTag> PRIMITIVE_TAGS = new HashMap<>();
+    public static final Map<String, String> PRIMITIVE_VALUES = new HashMap<>();
+    public static final Map<String, String> VALUE_TYPES = new HashMap<>();
+    public static final Map<String, String> MUTABLE_PROPERTIES = new HashMap<>();
     
     static
     {
-        //  ※ 拾ってはならないフラグはコメントアウトしてある
+        //  ※ 拾ってはならないフラグはコメントアウトしてある        
+        //MODIFIER_FLAGS.put(Modifier.ABSTRACT,         (long) Flags.ABSTRACT);
+        //MODIFIER_FLAGS.put(Modifier.DEFAULT,          (long) Flags.DEFAULT);
+        //MODIFIER_FLAGS.put(Modifier.FINAL,            (long) Flags.FINAL);
+        //MODIFIER_FLAGS.put(Modifier.NATIVE,           (long) Flags.NATIVE);
+        //MODIFIER_FLAGS.put(Modifier.NON_SEALED,       (long) Flags.NON_SEALED);
+        MODIFIER_FLAGS.put(Modifier.PRIVATE,          (long) Flags.PRIVATE);
+        MODIFIER_FLAGS.put(Modifier.PROTECTED,        (long) Flags.PROTECTED);
+        MODIFIER_FLAGS.put(Modifier.PUBLIC,           (long) Flags.PUBLIC);
+        //MODIFIER_FLAGS.put(Modifier.SEALED,           (long) Flags.SEALED);
+        MODIFIER_FLAGS.put(Modifier.STATIC,           (long) Flags.STATIC);
+        //MODIFIER_FLAGS.put(Modifier.STRICTFP,         (long) Flags.STRICTFP);
+        //MODIFIER_FLAGS.put(Modifier.SYNCHRONIZED,     (long) Flags.SYNCHRONIZED);
+        //MODIFIER_FLAGS.put(Modifier.TRANSIENT,        (long) Flags.TRANSIENT);
+        //MODIFIER_FLAGS.put(Modifier.VOLATILE,         (long) Flags.VOLATILE);
         
-        //modifierFlags.put(Modifier.ABSTRACT,         (long) Flags.ABSTRACT);
-        //modifierFlags.put(Modifier.DEFAULT,          (long) Flags.DEFAULT);
-        //modifierFlags.put(Modifier.FINAL,            (long) Flags.FINAL);
-        //modifierFlags.put(Modifier.NATIVE,           (long) Flags.NATIVE);
-        //modifierFlags.put(Modifier.NON_SEALED,       (long) Flags.NON_SEALED);
-        modifierFlags.put(Modifier.PRIVATE,          (long) Flags.PRIVATE);
-        modifierFlags.put(Modifier.PROTECTED,        (long) Flags.PROTECTED);
-        modifierFlags.put(Modifier.PUBLIC,           (long) Flags.PUBLIC);
-        //modifierFlags.put(Modifier.SEALED,           (long) Flags.SEALED);
-        modifierFlags.put(Modifier.STATIC,           (long) Flags.STATIC);
-        //modifierFlags.put(Modifier.STRICTFP,         (long) Flags.STRICTFP);
-        //modifierFlags.put(Modifier.SYNCHRONIZED,     (long) Flags.SYNCHRONIZED);
-        //modifierFlags.put(Modifier.TRANSIENT,        (long) Flags.TRANSIENT);
-        //modifierFlags.put(Modifier.VOLATILE,         (long) Flags.VOLATILE);
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyBooleanProperty", "boolean");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyDoubleProperty", "double");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyFloatProperty", "float");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyIntegerProperty", "int");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyLongProperty", "long");        
+        PRIMITIVE_VALUES.put("javafx.beans.property.BooleanProperty", "boolean");
+        PRIMITIVE_VALUES.put("javafx.beans.property.DoubleProperty", "double");
+        PRIMITIVE_VALUES.put("javafx.beans.property.FloatProperty", "float");
+        PRIMITIVE_VALUES.put("javafx.beans.property.IntegerProperty", "int");
+        PRIMITIVE_VALUES.put("javafx.beans.property.LongProperty", "long");        
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyBooleanWrapper", "boolean");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyDoubleWrapper", "double");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyFloatWrapper", "float");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyIntegerWrapper", "int");
+        PRIMITIVE_VALUES.put("javafx.beans.property.ReadOnlyLongWrapper", "long");
+
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyBooleanProperty", "java.lang.Boolean");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyDoubleProperty", "java.lang.Double");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyFloatProperty", "java.lang.Float");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyIntegerProperty", "java.lang.Integer");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyListProperty", "javafx.collections.ObservableList");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyLongProperty", "java.lang.Long");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyMapProperty", "javafx.collections.ObservableMap");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyObjectProperty", "java.lang.Object");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlySetProperty", "javafx.collections.ObservableSet");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyStringProperty", "java.lang.String");        
+        VALUE_TYPES.put("javafx.beans.property.BooleanProperty", "java.lang.Boolean");
+        VALUE_TYPES.put("javafx.beans.property.DoubleProperty", "java.lang.Double");
+        VALUE_TYPES.put("javafx.beans.property.FloatProperty", "java.lang.Float");
+        VALUE_TYPES.put("javafx.beans.property.IntegerProperty", "java.lang.Integer");
+        VALUE_TYPES.put("javafx.beans.property.ListProperty", "javafx.collections.ObservableList");
+        VALUE_TYPES.put("javafx.beans.property.LongProperty", "java.lang.Long");
+        VALUE_TYPES.put("javafx.beans.property.MapProperty", "javafx.collections.ObservableMap");
+        VALUE_TYPES.put("javafx.beans.property.ObjectProperty", "java.lang.Object");
+        VALUE_TYPES.put("javafx.beans.property.SetProperty", "javafx.collections.ObservableSet");
+        VALUE_TYPES.put("javafx.beans.property.StringProperty", "java.lang.String");        
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyBooleanWrapper", "java.lang.Boolean");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyDoubleWrapper", "java.lang.Double");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyFloatWrapper", "java.lang.Float");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyIntegerWrapper", "java.lang.Integer");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyListWrapper", "javafx.collections.ObservableList");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyLongWrapper", "java.lang.Long");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyMapWrapper", "javafx.collections.ObservableMap");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyObjectWrapper", "java.lang.Object");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlySetWrapper", "javafx.collections.ObservableSet");
+        VALUE_TYPES.put("javafx.beans.property.ReadOnlyStringWrapper", "java.lang.String");
         
-        primitiveValues.put("javafx.beans.property.ReadOnlyBooleanProperty", "boolean");
-        primitiveValues.put("javafx.beans.property.ReadOnlyDoubleProperty", "double");
-        primitiveValues.put("javafx.beans.property.ReadOnlyFloatProperty", "float");
-        primitiveValues.put("javafx.beans.property.ReadOnlyIntegerProperty", "int");
-        primitiveValues.put("javafx.beans.property.ReadOnlyLongProperty", "long");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlyListProperty", "javafx.collections.ObservableList");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlyMapProperty", "javafx.collections.ObservableMap");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlyObjectProperty", "java.lang.Object");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlySetProperty", "javafx.collections.ObservableSet");        
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ListProperty", "javafx.collections.ObservableList");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.MapProperty", "javafx.collections.ObservableMap");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ObjectProperty", "java.lang.Object");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.SetProperty", "javafx.collections.ObservableSet");        
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlyListWrapper", "javafx.collections.ObservableList");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlyMapWrapper", "javafx.collections.ObservableMap");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlyObjectWrapper", "java.lang.Object");
+        MUTABLE_PROPERTIES.put("javafx.beans.property.ReadOnlySetWrapper", "javafx.collections.ObservableSet");
         
-        valueTypes.put("javafx.beans.property.ReadOnlyBooleanProperty", "java.lang.Boolean");
-        valueTypes.put("javafx.beans.property.ReadOnlyDoubleProperty", "java.lang.Double");
-        valueTypes.put("javafx.beans.property.ReadOnlyFloatProperty", "java.lang.Float");
-        valueTypes.put("javafx.beans.property.ReadOnlyIntegerProperty", "java.lang.Integer");
-        valueTypes.put("javafx.beans.property.ReadOnlyListProperty", "java.lang.List");
-        valueTypes.put("javafx.beans.property.ReadOnlyLongProperty", "java.lang.Long");
-        valueTypes.put("javafx.beans.property.ReadOnlyMapProperty", "java.lang.Map");
-        valueTypes.put("javafx.beans.property.ReadOnlyObjectProperty", "java.lang.Object");
-        valueTypes.put("javafx.beans.property.ReadOnlySetProperty", "java.lang.Set");
-        valueTypes.put("javafx.beans.property.ReadOnlyStringProperty", "java.lang.String");
-        
-        primitiveTags.put("boolean", TypeTag.BOOLEAN);
-        primitiveTags.put("double", TypeTag.DOUBLE);
-        primitiveTags.put("float", TypeTag.FLOAT);
-        primitiveTags.put("int", TypeTag.INT);
-        primitiveTags.put("long", TypeTag.LONG);
+        PRIMITIVE_TAGS.put("boolean", TypeTag.BOOLEAN);
+        PRIMITIVE_TAGS.put("double", TypeTag.DOUBLE);
+        PRIMITIVE_TAGS.put("float", TypeTag.FLOAT);
+        PRIMITIVE_TAGS.put("int", TypeTag.INT);
+        PRIMITIVE_TAGS.put("long", TypeTag.LONG);
     }
     
     public static class TraceMessager
@@ -245,7 +288,6 @@ public class Utils
     //  指定したクラスが指定したクラスを継承、または指定したインターフェースを実装しているか返す。ジェネリクスの型情報は無視する。1つでもマッチすればtrue
     public static boolean anyDelivered(Elements elementUtils, Types typeUtils, String typeName, String[] parentNames)
     {
-        System.err.println(typeName);
         try
         {
             for (String parentName : parentNames)
@@ -261,7 +303,7 @@ public class Utils
     }
 
     //  指定したクラスが指定したクラスを継承、または指定したインターフェースを実装しているか返す。ジェネリクスの型情報は無視する。すべてにマッチすればtrue
-    //  （※ 複数のクラスを指定しないこと。trueになりません）
+    //  （※ 複数のクラスを指定しないこと。trueにならない）
     public static boolean allDelivered(Elements elementUtils, Types typeUtils, String typeName, String[] parentNames)
     {
         boolean delivered = false;
@@ -304,7 +346,7 @@ public class Utils
             typeName = typeName.substring(0, index);
         }
         return typeName;
-    }    
+    }
     
     //  FQCN形式のクラス名をJCExpression型に変換する
     public static JCTree.JCExpression makeQualifiedIdentifier(TreeMaker treeMaker, Names names, String fullyQualifiedClassName)
@@ -318,5 +360,41 @@ public class Utils
         }
         
         return expression;
+    }
+    
+    //  型情報を含むクラス名からクラス名だけを抽出する
+    public static String getBaseClassName(String elementType)
+    {
+        //  最初に出現する'<'の位置を取得
+        int index = elementType.indexOf('<');
+        
+        if (index != -1)
+        {
+        //  '<'より前の部分を返す
+            return elementType.substring(0, index).trim();
+        }
+        else
+        {
+            //  '<'が含まれていない場合はそのまま返す
+            return elementType.trim();
+        }
+    }
+    
+    //  型情報を含むクラス名から型情報だけを抽出する
+    //  （※ 本来この処理はいらない。次版で消したい）
+    public static String getGenericTypeNames(String elementType)
+    {
+        // 最初に出現する'<'と最後に出現する'>'の位置を取得
+        int firstIndex = elementType.indexOf('<');
+        int lastIndex = elementType.lastIndexOf('>');
+        
+        if (firstIndex != -1 && lastIndex != -1)
+        {
+            //  '<'と'>'が両方存在する場合は範囲内の文字列を返す
+            return elementType.substring(firstIndex);
+        }
+        
+        // 型情報が含まれていない場合は空文字を返す
+        return "";
     }
 }
